@@ -1,6 +1,8 @@
+#!/usr/bin/python3
+
 import random
 
-class walletManager:
+class WalletManager:
 
     wallets = []
     fakePassword = ""
