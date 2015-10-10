@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import random
+from Crypto.Random import random
 
 class WalletManager:
 
@@ -11,7 +11,7 @@ class WalletManager:
         self.x = 4
         self.password = ""
         
-    def generate(self,password):
+    def generate(self, password):
         """Generate fake passwords and use them to fill wallets"""
 
         #Arrays of characters to use when generating passwords
@@ -30,13 +30,13 @@ class WalletManager:
 
         for char in password:
             if char in lLetters:
-                fakePassword += random.choice(lLetters)
+                self.fakePassword += random.choice(lLetters)
             elif char in uLetters:
-                fakePassword += random.choice(uLetters)
+                self.fakePassword += random.choice(uLetters)
             elif char in numbers:
-                fakePassword += random.choice(numbers)
+                self.fakePassword += random.choice(numbers)
             else:
-                fakePassword += random.choice(symbols)
+                self.fakePassword += random.choice(symbols)
 
     def decrypt(self):
         pass
