@@ -10,6 +10,7 @@ def main():
     This is the main user interface that allows users to manage their
     wallets (each of which holds website, username, and password tuples).
     """
+    #TODO decrypt data
     print("Welcome to password_keeper. Type 'help' for a list of commands or 'exit' to exit.")
     while True:
         # Prompt for input

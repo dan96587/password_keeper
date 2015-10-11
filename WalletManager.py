@@ -6,6 +6,7 @@ class WalletManager:
 
     wallets = []
     fakePassword = ""
+    realIndex = -1
 
     def __init__(self):
         self.x = 4
@@ -38,10 +39,18 @@ class WalletManager:
             else:
                 self.fakePassword += random.choice(symbols)
 
-    def decrypt(self):
-        pass
+    def decrypt(self, password):
+        realIndex = -1
+        for (i, wallet) in enumerate(wallets):
+            if wallet.decrypt(password):
+                self.realIndex = i
+        if realIndex == -1:
+            return False
+        else:
+            return True
 
-    def encrypt(self):
+    def encrypt(self, password):
+        #TODO
         pass
 
 

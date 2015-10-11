@@ -2,8 +2,17 @@
 
 __author__ = 'jason'
 
+import Crypto.Random
+from Crypto.Cipher import AES
+import hashlib
 
 class Wallet:
+
+    # size (in bytes) of the random salt to be appended to the password
+    SALT_SIZE = 16
+    # data to encrypt must be a multiple of this many bytes
+    AES_BLOCK_SIZE = 16
+    
     def __init__(self):
         """initialize wallet with empty dictionary
             data uses form {website: [(username, password)]}
@@ -124,8 +133,62 @@ class Wallet:
         print(str(self.data))
         print()
 
+    def _generate_key(self, password, salt, iterations):
+        """Given a binary password and salt, repeatedly take the 
+        SHA-256 sum iterations number of times."""
+        assert iterations > 0
+        key = password + salt
+        for i in range(iterations):
+            key = hashlib.sha256(key).digest()
+        return key
+
+    def _pad_data(self, data, multiple):
+        """Given binary data, pad it with bytes so that it's
+        a multiple of AES_BLOCK_SIZE (even if it already is).
+        The padding character has the value of the number of padding bytes."""
+        extra_bytes = len(data) % multiple
+        padding_size = multiple - extra_bytes
+        padding = chr(padding_size) * padding_size
+        padded_data = data + bytes(padding, 'utf-8')
+        return padded_data
+
+    def _unpad_data(self, data):
+        """Given binary data, remove the padding applied by _pad_data."""
+        padding_size = data[-1]
+        original_data = data[:-padding_size]
+        return original_data
+
+    def _encrypt_data(self, plaintext, password, number_iterations):
+        """Given binary data (with the user's websites, usernames, and passwords),
+        encrypt it using AES by salting the given password and hashing it repeatedly."""
+        salt = Crypto.Random.get_random_bytes(self.SALT_SIZE)
+        key = self._generate_key(password, salt, number_iterations)
+        cipher = AES.new(key, AES.MODE_ECB)
+        padded_plaintext = self._pad_data(plaintext, self.AES_BLOCK_SIZE)
+        ciphertext = cipher.encrypt(padded_plaintext)
+        ciphertext_with_salt = salt + ciphertext
+        return ciphertext_with_salt
+
+    def _decrypt_data(self, ciphertext, password, number_iterations):
+        """Given encrypted binary data, decrypt it using the given password 
+        (reverse the process in _encrypt_data)."""
+        salt = ciphertext[:self.SALT_SIZE]
+        original_ciphertext = ciphertext[self.SALT_SIZE:]
+        key = self._generate_key(password, salt, number_iterations)
+        cipher = AES.new(key, AES.MODE_ECB)
+        padded_plaintext = cipher.decrypt(original_ciphertext)
+        plaintext = self._unpad_data(padded_plaintext)
+        return plaintext
+
     def encrypt(self, key, outFile):
         """Encrypt data and save to disk at location outFile"""
+        #TODO call _encrypt_data
+        #TODO write to disk
+        pass
 
     def decrypt(self, key, inFile):
         """Decrypt data from inFile and load into data"""
+        #TODO call _decrypt_data
+        #TODO write to disk
+        pass
+
