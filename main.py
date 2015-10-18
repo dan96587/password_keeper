@@ -4,13 +4,62 @@ __author__='mleeds95'
 
 import Wallet
 import WalletManager
+import configparser
+from sys import exit
+from os import path, mkdir, listdir
+
+CONFIG_FILE = "config.ini"
 
 def main():
     """
     This is the main user interface that allows users to manage their
-    wallets (each of which holds website, username, and password tuples).
+    wallet (each of which holds website, username, and password tuples).
     """
-    #TODO decrypt data
+
+    # First, read the config file
+    config = configparser.ConfigParser()
+    try:
+        configFile = open(CONFIG_FILE)
+    except FileNotFoundError:
+        print("Error: Configuration file " + CONFIG_FILE + " missing.")
+        exit(1)
+    config.read_file(configFile)
+
+    # Make a folder for wallet data if it doesn't exist.
+    wallet_folder_path = path.expanduser(config.get("FILESYSTEM", "WalletFolder"))
+    if not path.isdir(wallet_folder_path):
+        mkdir(wallet_folder_path)
+
+    # Make an empty wallet if none exist.
+    full_paths = []
+    if len(listdir(wallet_folder_path)) == 0:
+        print("Creating a new password wallet...")
+        wallet_filename = config.get("FILESYSTEM", "WalletFile") + "0"
+        wallet_path = path.join(wallet_folder_path, wallet_filename)
+        wallet = Wallet.Wallet(wallet_path)
+        password = input("Enter a master password:")
+        binary_password = bytes(password, 'utf-8')
+        wallet.encrypt(binary_password)
+        #TODO generate decoy wallets
+        print("Encrypted wallet data written to disk.")
+        full_paths.append(wallet_path)
+        del wallet, password, binary_password
+    else:
+        #TODO only look at files that match our naming scheme
+        for wallet_file in listdir(wallet_folder_path):
+            full_paths.append(path.join(wallet_folder_path, wallet_file))
+
+    # Initialize the wallet manager with the paths above.
+    walletManager = WalletManager.WalletManager(full_paths)
+
+    # Now attempt to decrypt existing wallets
+    decryption_success = False
+    print("Decrypting password data...")
+    while not decryption_success:
+        password = input("Enter your master password:")
+        binary_password = bytes(password, 'utf-8')
+        decryption_success = walletManager.decrypt(binary_password)
+
     print("Welcome to password_keeper. Type 'help' for a list of commands or 'exit' to exit.")
     while True:
         # Prompt for input
@@ -26,11 +75,8 @@ def main():
         elif user_input == "help":
             print_help()
             continue
-        elif user_input == "list":
-            list_wallets()
-            continue
-        elif user_input == "add":
-            add_wallet()
+        elif user_input == "read":
+            read_wallet()
             continue
         elif user_input == "delete":
             delete_wallet()
@@ -48,17 +94,12 @@ def print_help():
     print("Usable commands:\n")
     print("help -- print a list of commands")
     print("exit -- exit password_keeper")
-    print("list -- list all wallets")
-    print("add -- add a wallet")
-    print("delete -- delete a wallet")
-    print("update -- update a wallet")
+    print("read -- read website/password data")
+    print("delete -- delete all your data")
+    print("update -- update website/password data")
     print()
 
-def list_wallets():
-    pass
-    #TODO
-
-def add_wallet():
+def read_wallet():
     pass
     #TODO
 

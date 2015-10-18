@@ -5,6 +5,8 @@ __author__ = 'jason'
 import Crypto.Random
 from Crypto.Cipher import AES
 import hashlib
+from os import path
+import json
 
 class Wallet:
 
@@ -12,11 +14,14 @@ class Wallet:
     SALT_SIZE = 16
     # data to encrypt must be a multiple of this many bytes
     AES_BLOCK_SIZE = 16
+    # when generating a crypto key based on a password, take the SHA-256 hash this many times
+    KEYGEN_ITERATIONS = 20
     
-    def __init__(self):
-        """initialize wallet with empty dictionary
+    def __init__(self, path):
+        """ Initialize wallet that is stored at path
             data uses form {website: [(username, password)]}
         """
+        self.path = path
         self.data = {}
 
     def insert(self, site, user, password):
@@ -161,6 +166,7 @@ class Wallet:
     def _encrypt_data(self, plaintext, password, number_iterations):
         """Given binary data (with the user's websites, usernames, and passwords),
         encrypt it using AES by salting the given password and hashing it repeatedly."""
+        assert len(plaintext) > 0
         salt = Crypto.Random.get_random_bytes(self.SALT_SIZE)
         key = self._generate_key(password, salt, number_iterations)
         cipher = AES.new(key, AES.MODE_ECB)
@@ -172,6 +178,7 @@ class Wallet:
     def _decrypt_data(self, ciphertext, password, number_iterations):
         """Given encrypted binary data, decrypt it using the given password 
         (reverse the process in _encrypt_data)."""
+        assert len(ciphertext) > 0
         salt = ciphertext[:self.SALT_SIZE]
         original_ciphertext = ciphertext[self.SALT_SIZE:]
         key = self._generate_key(password, salt, number_iterations)
@@ -180,15 +187,26 @@ class Wallet:
         plaintext = self._unpad_data(padded_plaintext)
         return plaintext
 
-    def encrypt(self, key, outFile):
-        """Encrypt data and save to disk at location outFile"""
-        #TODO call _encrypt_data
-        #TODO write to disk
-        pass
+    def encrypt(self, password):
+        """Encrypt data and save to disk at location self.path"""
+        assert len(password) > 0
+        binary_data = bytes(json.dumps(self.data), 'utf-8')
+        encrypted_data = self._encrypt_data(binary_data, password, self.KEYGEN_ITERATIONS)
+        with open(self.path, 'wb') as f:
+            f.write(encrypted_data)
 
-    def decrypt(self, key, inFile):
-        """Decrypt data from inFile and load into data"""
-        #TODO call _decrypt_data
-        #TODO write to disk
-        pass
+    def decrypt(self, password):
+        """Decrypt data from self.path and load into data"""
+        assert len(password) > 0
+        assert path.isfile(self.path)
+        with open(self.path, 'rb') as f:
+            encrypted_data = f.read()
+            assert len(encrypted_data) > 0
+            unencrypted_binary_data = self._decrypt_data(encrypted_data, password, self.KEYGEN_ITERATIONS)
+            unencrypted_data = unencrypted_binary_data.decode("utf-8")
+            try:
+                self.data = json.loads(unencrypted_data)
+                return True
+            except ValueError:
+                return False
 
