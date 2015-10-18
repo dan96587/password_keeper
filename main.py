@@ -7,6 +7,7 @@ import WalletManager
 import configparser
 from sys import exit
 from os import path, mkdir, listdir
+import re
 
 CONFIG_FILE = "config.ini"
 
@@ -40,14 +41,16 @@ def main():
         password = input("Enter a master password:")
         binary_password = bytes(password, 'utf-8')
         wallet.encrypt(binary_password)
-        #TODO generate decoy wallets
+        #TODO generate decoy wallets and randomize the files' names
         print("Encrypted wallet data written to disk.")
         full_paths.append(wallet_path)
         del wallet, password, binary_password
     else:
-        #TODO only look at files that match our naming scheme
+        # find the absolute paths for all existing wallets
         for wallet_file in listdir(wallet_folder_path):
-            full_paths.append(path.join(wallet_folder_path, wallet_file))
+            filenameRE = r"^" + config.get("FILESYSTEM", "WalletFile") + "\d+$"
+            if re.match(filenameRE, wallet_file) != None:
+                full_paths.append(path.join(wallet_folder_path, wallet_file))
 
     # Initialize the wallet manager with the paths above.
     walletManager = WalletManager.WalletManager(full_paths)
@@ -59,6 +62,7 @@ def main():
         password = input("Enter your master password:")
         binary_password = bytes(password, 'utf-8')
         decryption_success = walletManager.decrypt(binary_password)
+    del password, binary_password
 
     print("Welcome to password_keeper. Type 'help' for a list of commands or 'exit' to exit.")
     while True:
