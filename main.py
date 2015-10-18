@@ -8,6 +8,7 @@ import configparser
 from sys import exit
 from os import path, mkdir, listdir
 import re
+from shutil import rmtree
 
 CONFIG_FILE = "config.ini"
 
@@ -18,6 +19,7 @@ def main():
     """
 
     # First, read the config file
+    global config
     config = configparser.ConfigParser()
     try:
         configFile = open(CONFIG_FILE)
@@ -108,8 +110,16 @@ def read_wallet():
     #TODO
 
 def delete_wallet():
-    pass
-    #TODO
+    global config
+    response = input("Are you sure you want to delete your wallet? [y/N]")
+    if len(response) == 0 or response[0].upper() != 'Y':
+        print("Aborting delete operation")
+        return
+    else:
+        wallet_folder_path = path.expanduser(config.get("FILESYSTEM", "WalletFolder"))
+        rmtree(wallet_folder_path)
+        print("Wallet deleted (was at " + wallet_folder_path + ")")
+        return
 
 def update_wallet():
     pass
