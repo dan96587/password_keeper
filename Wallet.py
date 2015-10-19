@@ -23,6 +23,17 @@ class Wallet:
         """
         self.path = path
         self.data = {}
+    def print_site_data(self, url):
+        """ The url parameter can be either 'all' or a site url.
+            The corresponding user/pass data is printed to stdout.
+        """
+        if url == "all":
+            self.print_wallet()
+        elif url in self.data:
+            #TODO better formatting
+            print(self.data[url])
+        else:
+            print("Error: " + url + " not found in wallet data.")
 
     def insert(self, site, user, password):
         """Insert a new entry into the wallet by adding to "data" dictionary
@@ -36,16 +47,21 @@ class Wallet:
             user - string representing desired username
             password - string representing desired password  TODO: possibly create password strength requirements?
         """
-        if site in self.data:
+        if site == "all":
+            print("Error: all is a reserved keyword.")
+            return False
+        elif site in self.data:
             for tuple in self.data[site]:
                 if tuple[0] == user:
                     print("Username '" + user + "' already exists for website '" + site + "'")
-                    return
+                    return False
             self.data[site].append((user, password))
+            return True
         else:
             self.data[site] = [(user, password)]
+            return True
 
-    def removeUser(self, site, user):
+    def remove_user(self, site, user):
         """Remove entry from the wallet by taking out an entry from the list of user, password pairs
             if list becomes empty, remove dictionary entry entirely
             if user doesn't exist for specified website, error
@@ -71,7 +87,7 @@ class Wallet:
         if len(self.data[site]) == 0:
             del self.data[site]
 
-    def removeSite(self, site):
+    def remove_site(self, site):
         """Remove all entries for a given website by deleting dictionary entry
 
             params:
@@ -82,7 +98,7 @@ class Wallet:
         else:
             print("Invalid website, '" + site + "' is not in wallet")
 
-    def updateUser(self, site, oldUser, newUser):
+    def update_user(self, site, oldUser, newUser):
         """Change a username for a given website
             if user doesn't exist for specified website, error
 
@@ -107,7 +123,7 @@ class Wallet:
         if not udpateFlag:
             print("Invalid username, '" + oldUser + "' is not in wallet")
 
-    def updatePass(self, site, user, newPass):
+    def update_pass(self, site, user, newPass):
         """Change a password for a given website and username
             if user doesn't exist for specified website, error
 
@@ -132,7 +148,7 @@ class Wallet:
         if not udpateFlag:
             print("Invalid username, '" + user + "' is not in wallet")
 
-    def printWallet(self):
+    def print_wallet(self):
         """print the entire wallet to console"""
         #TODO: better formatting
         print(str(self.data))

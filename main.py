@@ -7,8 +7,6 @@ import WalletManager
 import configparser
 from sys import exit
 from os import path, mkdir, listdir
-import re
-from shutil import rmtree
 
 CONFIG_FILE = "config.ini"
 
@@ -35,9 +33,10 @@ def main():
 
     # Make an empty wallet if none exist.
     full_paths = []
+    wallet_file_base = config.get("FILESYSTEM", "WalletFile")
     if len(listdir(wallet_folder_path)) == 0:
         print("Creating a new password wallet...")
-        wallet_filename = config.get("FILESYSTEM", "WalletFile") + "0"
+        wallet_filename = wallet_file_base + "0"
         wallet_path = path.join(wallet_folder_path, wallet_filename)
         wallet = Wallet.Wallet(wallet_path)
         password = input("Enter a master password:")
@@ -45,17 +44,10 @@ def main():
         wallet.encrypt(binary_password)
         #TODO generate decoy wallets and randomize the files' names
         print("Encrypted wallet data written to disk.")
-        full_paths.append(wallet_path)
         del wallet, password, binary_password
-    else:
-        # find the absolute paths for all existing wallets
-        for wallet_file in listdir(wallet_folder_path):
-            filenameRE = r"^" + config.get("FILESYSTEM", "WalletFile") + "\d+$"
-            if re.match(filenameRE, wallet_file) != None:
-                full_paths.append(path.join(wallet_folder_path, wallet_file))
 
-    # Initialize the wallet manager with the paths above.
-    walletManager = WalletManager.WalletManager(full_paths)
+    # Initialize the wallet manager with the wallet folder and base file name
+    walletManager = WalletManager.WalletManager(wallet_folder_path, wallet_file_base)
 
     # Now attempt to decrypt existing wallets
     decryption_success = False
@@ -81,14 +73,39 @@ def main():
         elif user_input == "help":
             print_help()
             continue
-        elif user_input == "read":
-            read_wallet()
+        elif user_input.split()[0] == "print":
+            if len(user_input.split()) != 2:
+                print("Usage: print <website url>|all")
+            else:
+                walletManager.wallet.print_site_data(user_input.split()[1])
             continue
-        elif user_input == "delete":
-            delete_wallet()
+        elif user_input.split()[0] == "add":
+            if len(user_input.split()) != 4:
+                print("Usage: add <website url> <username> <password>")
+            else:
+                walletManager.wallet.insert(user_input.split()[1], user_input.split()[2], user_input.split()[3])
             continue
-        elif user_input == "update":
-            update_wallet()
+        elif user_input.split()[0] == "delete":
+            if len(user_input.split()) != 2:
+                print("Usage: delete <website url>|all")
+            elif user_input.split()[1] == "all":
+                walletManager.delete()
+                break # exit
+            else:
+                walletManager.wallet.remove_site(user_input.split()[1])
+            continue
+        elif user_input.split()[0] == "update":
+            if len(user_input.split()) != 5:
+                print("Usage: update user|pass <site> <user> <new user/pass>")
+            elif user_input.split()[1] == "user":
+                walletManager.wallet.update_user(user_input.split()[2], user_input.split()[3], user_input.split()[4])
+            elif user_input.split()[1] == "pass":
+                walletManager.wallet.update_pass(user_input.split()[2], user_input.split()[3], user_input.split()[4])
+            else:
+                print("Usage: update user|pass <site> <user> <new user/pass>")
+            continue
+        elif user_input == "save":
+            #TODO
             continue
         else:
             print_help()
@@ -100,31 +117,12 @@ def print_help():
     print("Usable commands:\n")
     print("help -- print a list of commands")
     print("exit -- exit password_keeper")
-    print("read -- read website/password data")
-    print("delete -- delete all your data")
-    print("update -- update website/password data")
+    print("print <website url>|all -- print username/password pair(s) for the given site, or all to stdout")
+    print("add <website url> <username> <password> -- add a username/password pair to the stored data")
+    print("delete <website url>|all -- delete a specific site's data or all your data")
+    print("update user|pass <site> <user> <new user/pass> -- update website/password data")
+    print("save -- save changes to the disk")
     print()
-
-def read_wallet():
-    pass
-    #TODO
-
-def delete_wallet():
-    global config
-    response = input("Are you sure you want to delete your wallet? [y/N]")
-    if len(response) == 0 or response[0].upper() != 'Y':
-        print("Aborting delete operation")
-        return
-    else:
-        wallet_folder_path = path.expanduser(config.get("FILESYSTEM", "WalletFolder"))
-        rmtree(wallet_folder_path)
-        print("Wallet deleted (was at " + wallet_folder_path + ")")
-        return
-
-def update_wallet():
-    pass
-    #TODO
-
 
 if __name__=='__main__':
     main()
