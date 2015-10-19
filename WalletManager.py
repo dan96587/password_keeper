@@ -45,7 +45,12 @@ class WalletManager:
 
         return fakePassword
 
+    def generate_decoy_wallets(self):
+        #TODO
+        pass
+
     def decrypt(self, password):
+        """Iterate over the wallets, attempting to decrypt each and returning boolean success."""
         self.realIndex = -1
         for (i, wallet_path) in enumerate(self.wallets):
             wallet = Wallet.Wallet(wallet_path)
@@ -57,10 +62,6 @@ class WalletManager:
             return False
         else:
             return True
-
-    def encrypt(self, password):
-        #TODO
-        pass
 
     def delete(self):
         """Prompt for confirmation then delete all wallet data."""

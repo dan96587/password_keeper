@@ -40,7 +40,7 @@ def main():
         wallet_path = path.join(wallet_folder_path, wallet_filename)
         wallet = Wallet.Wallet(wallet_path)
         password = input("Enter a master password:")
-        binary_password = bytes(password, 'utf-8')
+        binary_password = bytes(password, "utf-8")
         wallet.encrypt(binary_password)
         #TODO generate decoy wallets and randomize the files' names
         print("Encrypted wallet data written to disk.")
@@ -54,9 +54,9 @@ def main():
     print("Decrypting password data...")
     while not decryption_success:
         password = input("Enter your master password:")
-        binary_password = bytes(password, 'utf-8')
+        binary_password = bytes(password, "utf-8")
         decryption_success = walletManager.decrypt(binary_password)
-    del password, binary_password
+    del password
 
     print("Welcome to password_keeper. Type 'help' for a list of commands or 'exit' to exit.")
     while True:
@@ -105,7 +105,8 @@ def main():
                 print("Usage: update user|pass <site> <user> <new user/pass>")
             continue
         elif user_input == "save":
-            #TODO
+            #TODO regenerate decoys if necessary
+            walletManager.wallet.encrypt(binary_password)
             continue
         else:
             print_help()
@@ -124,6 +125,6 @@ def print_help():
     print("save -- save changes to the disk")
     print()
 
-if __name__=='__main__':
+if __name__=="__main__":
     main()
 

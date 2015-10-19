@@ -219,10 +219,10 @@ class Wallet:
             encrypted_data = f.read()
             assert len(encrypted_data) > 0
             unencrypted_binary_data = self._decrypt_data(encrypted_data, password, self.KEYGEN_ITERATIONS)
-            unencrypted_data = unencrypted_binary_data.decode("utf-8")
             try:
+                unencrypted_data = unencrypted_binary_data.decode("utf-8")
                 self.data = json.loads(unencrypted_data)
                 return True
-            except ValueError:
+            except (UnicodeDecodeError, ValueError):
                 return False
 
