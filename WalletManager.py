@@ -13,7 +13,6 @@ class WalletManager:
     wallet = None
 
     def __init__(self, wallet_folder_path, wallet_file_base):
-        self.x = 4
         self.wallet_folder_path = wallet_folder_path
         # find the absolute paths for all existing wallets
         self.wallets = []
