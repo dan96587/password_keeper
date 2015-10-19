@@ -23,6 +23,7 @@ class Wallet:
         """
         self.path = path
         self.data = {}
+        
     def print_site_data(self, url):
         """ The url parameter can be either 'all' or a site url.
             The corresponding user/pass data is printed to stdout.
