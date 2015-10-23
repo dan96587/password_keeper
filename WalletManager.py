@@ -53,17 +53,17 @@ class WalletManager:
             return
 
         newWallets = []
-        for x in range(NUM_DECOYS):
-            newWallets.append(Wallet(createPath()))
+        for x in range(self.NUM_DECOYS):
+            newWallets.append(Wallet.Wallet(self.create_wallet_path()))
 
         # generate fake password for each password in real wallet and insert into decoy wallets
         for website in wallet.data:
             for userpass in wallet.data[website]:
                 for curWallet in newWallets:
-                    curWallet.insert(website, userpass[0], _generate_decoy_pass(userpass[1]))
+                    curWallet.insert(website, userpass[0], self._generate_decoy_pass(userpass[1]))
 
         # insert real wallet into random position in wallet list
-        newWallets.insert(randint(0,NUM_DECOYS), wallet)
+        newWallets.insert(randint(0,self.NUM_DECOYS), self.wallet)
         self.wallets = newWallets
 
     def create_wallet_path(self):
