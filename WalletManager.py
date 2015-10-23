@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 from Crypto.Random import random
+from random import randint
 import Wallet
 import re
 from os import path, listdir
@@ -11,6 +12,7 @@ class WalletManager:
     wallets = []
     realIndex = -1
     wallet = None
+    NUM_DECOYS = 5
 
     def __init__(self, wallet_folder_path, wallet_file_base):
         self.wallet_folder_path = wallet_folder_path
@@ -45,6 +47,27 @@ class WalletManager:
         return fakePassword
 
     def generate_decoy_wallets(self):
+        """Create a new list of decoy wallets based on the real wallet and replace the wallet list with the new list."""
+        if self.wallet is None:
+            print("Error, wallet not decrypted")
+            return
+
+        newWallets = []
+        for x in range(NUM_DECOYS):
+            newWallets.append(Wallet(createPath()))
+
+        # generate fake password for each password in real wallet and insert into decoy wallets
+        for website in wallet.data:
+            for userpass in wallet.data[website]:
+                for curWallet in newWallets:
+                    curWallet.insert(website, userpass[0], _generate_decoy_pass(userpass[1]))
+
+        # insert real wallet into random position in wallet list
+        newWallets.insert(randint(0,NUM_DECOYS), wallet)
+        self.wallets = newWallets
+
+    def create_wallet_path(self):
+        """Create a random file path for a new wallet."""
         #TODO
         pass
 
