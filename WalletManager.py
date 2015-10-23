@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 from Crypto.Random import random
-from random import randint
 import Wallet
 import re
 from os import path, listdir
@@ -63,7 +62,7 @@ class WalletManager:
                     curWallet.insert(website, userpass[0], self._generate_decoy_pass(userpass[1]))
 
         # insert real wallet into random position in wallet list
-        newWallets.insert(randint(0,self.NUM_DECOYS), self.wallet)
+        newWallets.insert(random.randint(0,self.NUM_DECOYS), self.wallet)
         self.wallets = newWallets
 
     def create_wallet_path(self):
