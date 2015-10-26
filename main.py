@@ -32,6 +32,7 @@ def main():
         mkdir(wallet_folder_path)
 
     # Make an empty wallet if none exist.
+    password = ""
     full_paths = []
     wallet_file_base = config.get("FILESYSTEM", "WalletFile")
     if len(listdir(wallet_folder_path)) == 0:
@@ -42,12 +43,13 @@ def main():
         password = input("Enter a master password:")
         binary_password = bytes(password, "utf-8")
         wallet.encrypt(binary_password)
-        #TODO generate decoy wallets and randomize the files' names
         print("Encrypted wallet data written to disk.")
-        del wallet, password, binary_password
 
     # Initialize the wallet manager with the wallet folder and base file name
     walletManager = WalletManager.WalletManager(wallet_folder_path, wallet_file_base)
+    if len(walletManager.wallets) == 1:
+        walletManager.generate_decoys(password)
+        walletManager.encrypt_decoys(password)
 
     # Now attempt to decrypt existing wallets
     decryption_success = False
@@ -56,7 +58,6 @@ def main():
         password = input("Enter your master password:")
         binary_password = bytes(password, "utf-8")
         decryption_success = walletManager.decrypt(binary_password)
-    del password
 
     print("Welcome to password_keeper. Type 'help' for a list of commands or 'exit' to exit.")
     while True:
@@ -84,6 +85,7 @@ def main():
                 print("Usage: add <website url> <username> <password>")
             else:
                 walletManager.wallet.insert(user_input.split()[1], user_input.split()[2], user_input.split()[3])
+                walletManager.regenerate_decoys(password)
             continue
         elif user_input.split()[0] == "delete":
             if len(user_input.split()) != 2:
@@ -93,21 +95,24 @@ def main():
                 break # exit
             else:
                 walletManager.wallet.remove_site(user_input.split()[1])
+                walletManager.regenerate_decoys(password)
             continue
         elif user_input.split()[0] == "update":
             if len(user_input.split()) != 5:
                 print("Usage: update user|pass <site> <user> <new user/pass>")
             elif user_input.split()[1] == "user":
                 walletManager.wallet.update_user(user_input.split()[2], user_input.split()[3], user_input.split()[4])
+                walletManager.regenerate_decoys(password)
             elif user_input.split()[1] == "pass":
                 walletManager.wallet.update_pass(user_input.split()[2], user_input.split()[3], user_input.split()[4])
+                walletManager.regenerate_decoys(password)
             else:
                 print("Usage: update user|pass <site> <user> <new user/pass>")
             continue
         elif user_input == "save":
-            #TODO regenerate decoys if necessary
             walletManager.wallet.encrypt(binary_password)
-            continue
+            walletManager.encrypt_decoys(password)
+            break
         else:
             print_help()
             continue
@@ -122,7 +127,7 @@ def print_help():
     print("add <website url> <username> <password> -- add a username/password pair to the stored data")
     print("delete <website url>|all -- delete a specific site's data or all your data")
     print("update user|pass <site> <user> <new user/pass> -- update website/password data")
-    print("save -- save changes to the disk")
+    print("save -- save changes to the disk and exit")
     print()
 
 if __name__=="__main__":

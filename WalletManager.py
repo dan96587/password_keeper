@@ -3,8 +3,9 @@
 from Crypto.Random import random
 import Wallet
 import re
-from os import path, listdir
+from os import path, listdir, rename
 from shutil import rmtree
+from tempfile import gettempdir
 
 class WalletManager:
 
@@ -15,12 +16,13 @@ class WalletManager:
 
     def __init__(self, wallet_folder_path, wallet_file_base):
         self.wallet_folder_path = wallet_folder_path
+        self.wallet_file_base = wallet_file_base
         # find the absolute paths for all existing wallets
         self.wallets = []
         filenameRE = r"^" + wallet_file_base + "\d+$"
         for wallet_file in listdir(wallet_folder_path):
             if re.match(filenameRE, wallet_file) != None:
-                self.wallets.append(path.join(wallet_folder_path, wallet_file))
+                self.wallets.append(Wallet.Wallet(path.join(wallet_folder_path, wallet_file)))
         
     def _generate_decoy_pass(self, password):
         """Generate a fake password based on the character types in a real password"""
@@ -31,58 +33,82 @@ class WalletManager:
         numbers = ['0','1','2','3','4','5','6','7','8','9']
         symbols = ['!','@','#','$','%','^','&','*','(',')','-','_','<','>','?','/']
         
-        fakePassword = ""
+        fake_password = ""
         # Iterate over the given password, building a fake one semi-randomly.
         for char in password:
             if char in lLetters:
-                fakePassword += random.choice(lLetters)
+                fake_password += random.choice(lLetters)
             elif char in uLetters:
-                fakePassword += random.choice(uLetters)
+                fake_password += random.choice(uLetters)
             elif char in numbers:
-                fakePassword += random.choice(numbers)
+                fake_password += random.choice(numbers)
             else:
-                fakePassword += random.choice(symbols)
+                fake_password += random.choice(symbols)
 
-        return fakePassword
+        return fake_password
 
-    def generate_decoy_wallets(self):
+    def generate_decoys(self, password):
+        """Create empty decoy wallets."""
+
+        assert len(self.wallets) == 1
+
+        for x in range(1, self.NUM_DECOYS + 1):
+            new_wallet_path = path.join(self.wallet_folder_path, self.wallet_file_base + str(x))
+            new_wallet = Wallet.Wallet(new_wallet_path)
+            binary_password = bytes(self._generate_decoy_pass(password), "utf-8")
+            new_wallet.encrypt(binary_password)
+            self.wallets.append(new_wallet)
+
+        new_real_index = random.randint(1, self.NUM_DECOYS)
+        # swap the file names for the real wallet and a random one.
+        real_wallet = self.wallets[0]
+        swap_wallet = self.wallets[new_real_index]
+        rename(swap_wallet.path, path.join(gettempdir(), swap_wallet.path))
+        rename(real_wallet.path, swap_wallet.path)
+        rename(path.join(gettempdir(), swap_wallet.path), real_wallet.path)
+
+        # swap the wallet objects indices in our list
+        self.wallets.insert(new_real_index, self.wallets[0])
+        self.wallets.pop(0)
+        self.wallets.insert(0, self.wallets[new_real_index])
+        self.wallets.pop(new_real_index)
+
+        self.realIndex = new_real_index
+
+    def regenerate_decoys(self, password):
         """Create a new list of decoy wallets based on the real wallet and replace the wallet list with the new list."""
         if self.wallet is None:
             print("Error, wallet not decrypted")
             return
 
-        newWallets = []
-        for x in range(self.NUM_DECOYS):
-            newWallets.append(Wallet.Wallet(self.create_wallet_path()))
-
-        # generate fake password for each password in real wallet and insert into decoy wallets
-        for website in wallet.data:
-            for userpass in wallet.data[website]:
-                for curWallet in newWallets:
-                    curWallet.insert(website, userpass[0], self._generate_decoy_pass(userpass[1]))
-
-        # insert real wallet into random position in wallet list
-        newWallets.insert(random.randint(0,self.NUM_DECOYS), self.wallet)
-        self.wallets = newWallets
-
-    def create_wallet_path(self):
-        """Create a random file path for a new wallet."""
-        #TODO
-        pass
+        for (i, current_wallet) in enumerate(self.wallets):
+            if i == self.realIndex:
+                new_wallets.append(current_wallet)
+                continue # don't overwrite the user's data
+            current_wallet.reset()
+            # generate fake password for each password in real wallet and insert into decoy
+            for website in wallet.data:
+                for userpass in wallet.data[website]:
+                    current_wallet.insert(website, userpass[0], self._generate_decoy_pass(userpass[1]))
 
     def decrypt(self, password):
         """Iterate over the wallets, attempting to decrypt each and returning boolean success."""
         self.realIndex = -1
-        for (i, wallet_path) in enumerate(self.wallets):
-            wallet = Wallet.Wallet(wallet_path)
-            if wallet.decrypt(password):
+        for (i, current_wallet) in enumerate(self.wallets):
+            if current_wallet.decrypt(password):
                 self.realIndex = i
-                self.wallet = wallet
-                break
-        if self.realIndex == -1:
-            return False
-        else:
-            return True
+                self.wallet = current_wallet
+                return True
+        return False
+
+    def encrypt_decoys(self, password):
+        """Encrypt the decoy wallets using passwords based on the real password."""
+        for (i, wallet) in enumerate(self.wallets):
+            if i == self.realIndex:
+                continue
+            binary_password = bytes(self._generate_decoy_pass(password), "utf-8")
+            wallet.encrypt(binary_password)
+        self.realIndex = -1
 
     def delete(self):
         """Prompt for confirmation then delete all wallet data."""

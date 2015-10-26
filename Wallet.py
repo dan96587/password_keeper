@@ -227,3 +227,6 @@ class Wallet:
             except (UnicodeDecodeError, ValueError):
                 return False
 
+    def reset(self):
+        self.data = {}
+
