@@ -85,12 +85,11 @@ class WalletManager:
 
         for (i, current_wallet) in enumerate(self.wallets):
             if i == self.realIndex:
-                new_wallets.append(current_wallet)
                 continue # don't overwrite the user's data
             current_wallet.reset()
             # generate fake password for each password in real wallet and insert into decoy
-            for website in wallet.data:
-                for userpass in wallet.data[website]:
+            for website in current_wallet.data:
+                for userpass in current_wallet.data[website]:
                     current_wallet.insert(website, userpass[0], self._generate_decoy_pass(userpass[1]))
 
     def decrypt(self, password):
