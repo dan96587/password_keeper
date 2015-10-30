@@ -49,7 +49,7 @@ def main():
     walletManager = WalletManager.WalletManager(wallet_folder_path, wallet_file_base)
     if len(walletManager.wallets) == 1:
         walletManager.generate_decoys(password)
-        walletManager.encrypt_decoys(password)
+        walletManager.encrypt_wallets(password)
 
     # Now attempt to decrypt existing wallets
     decryption_success = False
@@ -110,8 +110,7 @@ def main():
                 print("Usage: update user|pass <site> <user> <new user/pass>")
             continue
         elif user_input == "save":
-            walletManager.wallet.encrypt(binary_password)
-            walletManager.encrypt_decoys(password)
+            walletManager.encrypt_wallets(password)
             break
         else:
             print_help()

@@ -62,24 +62,26 @@ class WalletManager:
         new_real_index = random.randint(1, self.NUM_DECOYS)
         # swap the file names for the real wallet and a random one.
         real_wallet = self.wallets[0]
+        real_wallet_path = real_wallet.path
         swap_wallet = self.wallets[new_real_index]
-        rename(swap_wallet.path, path.join(gettempdir(), swap_wallet.path))
-        rename(real_wallet.path, swap_wallet.path)
-        rename(path.join(gettempdir(), swap_wallet.path), real_wallet.path)
+        swap_wallet_path = swap_wallet.path
+        rename(swap_wallet_path, path.join(gettempdir(), swap_wallet_path))
+        rename(real_wallet_path, swap_wallet_path)
+        real_wallet.path = swap_wallet_path
+        rename(path.join(gettempdir(), swap_wallet_path), real_wallet_path)
+        swap_wallet.path = real_wallet_path
 
         # swap the wallet objects indices in our list
         self.wallets.insert(new_real_index, self.wallets[0])
         self.wallets.pop(0)
         self.wallets.insert(0, self.wallets[new_real_index])
-        self.wallets.pop(new_real_index)
+        self.wallets.pop(new_real_index + 1)
 
         self.realIndex = new_real_index
 
     def regenerate_decoys(self, password):
         """Create a new list of decoy wallets based on the real wallet and replace the wallet list with the new list."""
-        if self.wallet is None:
-            print("Error, wallet not decrypted")
-            return
+        assert(self.wallet is not None)
 
         for (i, current_wallet) in enumerate(self.wallets):
             if i == self.realIndex:
@@ -101,13 +103,17 @@ class WalletManager:
                 return True
         return False
 
-    def encrypt_decoys(self, password):
-        """Encrypt the decoy wallets using passwords based on the real password."""
+    def encrypt_wallets(self, password):
+        """Encrypt the wallets using passwords based on the real password.
+           The real wallet must be encrypted too so the files' last
+           modified times don't give it away."""
         for (i, wallet) in enumerate(self.wallets):
             if i == self.realIndex:
-                continue
-            binary_password = bytes(self._generate_decoy_pass(password), "utf-8")
-            wallet.encrypt(binary_password)
+                wallet.encrypt(bytes(password, "utf-8"))
+            else:
+                fake_pass = self._generate_decoy_pass(password)
+                binary_password = bytes(fake_pass, "utf-8")
+                wallet.encrypt(binary_password)
         self.realIndex = -1
 
     def delete(self):
