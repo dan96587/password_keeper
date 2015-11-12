@@ -26,7 +26,7 @@ class WalletManager:
         
     def _generate_decoy_pass(self, password):
         """Generate a fake password based on the character types in a real password"""
-
+        '''
         # Arrays of characters to use when generating passwords
         lLetters = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
         uLetters = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
@@ -46,6 +46,11 @@ class WalletManager:
                 fake_password += random.choice(symbols)
 
         return fake_password
+        '''
+        f = open('passwords.txt','r')
+        lines = f.readlines()
+        randNum = random.randint(1,9999)
+        return lines[randNum]
 
     def generate_decoys(self, password):
         """Create empty decoy wallets."""
