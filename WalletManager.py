@@ -94,6 +94,7 @@ class WalletManager:
 
     def regenerate_decoys(self, password):
         """Create a new list of decoy wallets based on the real wallet and replace the wallet list with the new list."""
+
         assert(self.wallet is not None)
 
         for (i, current_wallet) in enumerate(self.wallets):
@@ -101,8 +102,8 @@ class WalletManager:
                 continue # don't overwrite the user's data
             current_wallet.reset()
             # generate fake password for each password in real wallet and insert into decoy
-            for website in current_wallet.data:
-                for userpass in current_wallet.data[website]:
+            for website in self.wallet.data:
+                for userpass in self.wallet.data[website]:
                     if self.use_passwords_file:
                         decoy_pass = self._generate_decoy_pass()
                     else:
