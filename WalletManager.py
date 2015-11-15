@@ -14,7 +14,8 @@ class WalletManager:
     wallet = None
     NUM_DECOYS = 5
 
-    def __init__(self, wallet_folder_path, wallet_file_base):
+    def __init__(self, wallet_folder_path, wallet_file_base, passwords_file_path, use_passwords_file):
+        self.use_passwords_file = use_passwords_file
         self.wallet_folder_path = wallet_folder_path
         self.wallet_file_base = wallet_file_base
         # find the absolute paths for all existing wallets
@@ -23,10 +24,13 @@ class WalletManager:
         for wallet_file in listdir(wallet_folder_path):
             if re.match(filenameRE, wallet_file) != None:
                 self.wallets.append(Wallet.Wallet(path.join(wallet_folder_path, wallet_file)))
+        # if necessary, read human-made passwords from the given path
+        if self.use_passwords_file:
+            with open(passwords_file_path) as f:
+                self.human_passwords = [line.strip() for line in f.readlines()]
         
     def _generate_decoy_pass(self, password):
-        """Generate a fake password based on the character types in a real password"""
-        '''
+        """ Generate a fake password based on the character types in the real password """
         # Arrays of characters to use when generating passwords
         lLetters = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
         uLetters = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
@@ -46,11 +50,11 @@ class WalletManager:
                 fake_password += random.choice(symbols)
 
         return fake_password
-        '''
-        f = open('passwords.txt','r')
-        lines = f.readlines()
-        randNum = random.randint(1,9999)
-        return lines[randNum]
+
+    def _generate_decoy_pass(self):
+        """ Generate a fake password by choosing a real one from the given list. """
+        random_index = random.randint(0, len(self.human_passwords) - 1)
+        return self.human_passwords[random_index]
 
     def generate_decoys(self, password):
         """Create empty decoy wallets."""
@@ -60,7 +64,11 @@ class WalletManager:
         for x in range(1, self.NUM_DECOYS + 1):
             new_wallet_path = path.join(self.wallet_folder_path, self.wallet_file_base + str(x))
             new_wallet = Wallet.Wallet(new_wallet_path)
-            binary_password = bytes(self._generate_decoy_pass(password), "utf-8")
+            if self.use_passwords_file:
+                decoy_pass = self._generate_decoy_pass()
+            else:
+                decoy_pass = self._generate_decoy_pass(password)
+            binary_password = bytes(decoy_pass, "utf-8")
             new_wallet.encrypt(binary_password)
             self.wallets.append(new_wallet)
 
@@ -95,7 +103,11 @@ class WalletManager:
             # generate fake password for each password in real wallet and insert into decoy
             for website in current_wallet.data:
                 for userpass in current_wallet.data[website]:
-                    current_wallet.insert(website, userpass[0], self._generate_decoy_pass(userpass[1]))
+                    if self.use_passwords_file:
+                        decoy_pass = self._generate_decoy_pass()
+                    else:
+                        decoy_pass = self._generate_decoy_pass(userpass[1])
+                    current_wallet.insert(website, userpass[0], decoy_pass)
 
     def decrypt(self, password):
         """Iterate over the wallets, attempting to decrypt each and returning boolean success."""
@@ -108,15 +120,17 @@ class WalletManager:
         return False
 
     def encrypt_wallets(self, password):
-        """Encrypt the wallets using passwords based on the real password.
-           The real wallet must be encrypted too so the files' last
-           modified times don't give it away."""
+        """Encrypt all the wallets. The real wallet must be encrypted too
+           so the files' last modified times don't give it away."""
         for (i, wallet) in enumerate(self.wallets):
             if i == self.realIndex:
                 wallet.encrypt(bytes(password, "utf-8"))
             else:
-                fake_pass = self._generate_decoy_pass(password)
-                binary_password = bytes(fake_pass, "utf-8")
+                if self.use_passwords_file:
+                    decoy_pass = self._generate_decoy_pass()
+                else:
+                    decoy_pass = self._generate_decoy_pass(password)
+                binary_password = bytes(decoy_pass, "utf-8")
                 wallet.encrypt(binary_password)
         self.realIndex = -1
 

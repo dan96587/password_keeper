@@ -45,8 +45,21 @@ def main():
         wallet.encrypt(binary_password)
         print("Encrypted wallet data written to disk.")
 
-    # Initialize the wallet manager with the wallet folder and base file name
-    walletManager = WalletManager.WalletManager(wallet_folder_path, wallet_file_base)
+    # check if a file of human passwords should be used for decoy generation
+    use_passwords_file = config.getboolean("BEHAVIOR", "UsePasswordsFile")
+    try:
+        passwords_file_path = path.expanduser(config.get("FILESYSTEM", "PasswordsFile"))
+        if not path.isfile(passwords_file_path):
+            use_passwords_file = False
+    except configparser.NoOptionError:
+        use_passwords_file = False
+        passwords_file_path = ''
+
+    # Initialize the wallet manager with the necessary configuration
+    walletManager = WalletManager.WalletManager(wallet_folder_path,
+                                                wallet_file_base,
+                                                passwords_file_path,
+                                                use_passwords_file)
     if len(walletManager.wallets) == 1:
         walletManager.generate_decoys(password)
         walletManager.encrypt_wallets(password)
