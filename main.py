@@ -55,12 +55,19 @@ def main():
         use_passwords_file = False
         passwords_file_path = ''
 
+    # check how many decoy wallets should be generated
+    number_decoys = config.getint("BEHAVIOR", "NumberDecoys")
+    assert(number_decoys >= 0)
+
     # Initialize the wallet manager with the necessary configuration
     walletManager = WalletManager.WalletManager(wallet_folder_path,
                                                 wallet_file_base,
                                                 passwords_file_path,
-                                                use_passwords_file)
-    if len(walletManager.wallets) == 1:
+                                                use_passwords_file,
+                                                number_decoys)
+
+    # generate empty decoy wallets and encrypt them if necessary
+    if len(walletManager.wallets) != number_decoys + 1:
         walletManager.generate_decoys(password)
         walletManager.encrypt_wallets(password)
 

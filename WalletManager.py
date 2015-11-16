@@ -12,9 +12,10 @@ class WalletManager:
     wallets = []
     realIndex = -1
     wallet = None
-    NUM_DECOYS = 5
 
-    def __init__(self, wallet_folder_path, wallet_file_base, passwords_file_path, use_passwords_file):
+    def __init__(self, wallet_folder_path, wallet_file_base, passwords_file_path, 
+                 use_passwords_file, number_decoys):
+        self.number_decoys = number_decoys
         self.use_passwords_file = use_passwords_file
         self.wallet_folder_path = wallet_folder_path
         self.wallet_file_base = wallet_file_base
@@ -61,7 +62,10 @@ class WalletManager:
 
         assert len(self.wallets) == 1
 
-        for x in range(1, self.NUM_DECOYS + 1):
+        if self.number_decoys == 0:
+            return
+
+        for x in range(1, self.number_decoys + 1):
             new_wallet_path = path.join(self.wallet_folder_path, self.wallet_file_base + str(x))
             new_wallet = Wallet.Wallet(new_wallet_path)
             if self.use_passwords_file:
@@ -72,7 +76,7 @@ class WalletManager:
             new_wallet.encrypt(binary_password)
             self.wallets.append(new_wallet)
 
-        new_real_index = random.randint(1, self.NUM_DECOYS)
+        new_real_index = random.randint(1, self.number_decoys)
         # swap the file names for the real wallet and a random one.
         real_wallet = self.wallets[0]
         real_wallet_path = real_wallet.path
