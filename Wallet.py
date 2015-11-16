@@ -223,8 +223,9 @@ class Wallet:
             try:
                 unencrypted_data = unencrypted_binary_data.decode("utf-8")
                 self.data = json.loads(unencrypted_data)
+                assert(type(self.data) == dict)
                 return True
-            except (UnicodeDecodeError, ValueError):
+            except (UnicodeDecodeError, ValueError, AssertionError):
                 return False
 
     def reset(self):
