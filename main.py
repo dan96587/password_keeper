@@ -72,12 +72,11 @@ def main():
         walletManager.encrypt_wallets(password)
 
     # Now attempt to decrypt existing wallets
-    decryption_success = False
     print("Decrypting password data...")
-    while not decryption_success:
-        password = input("Enter your master password:")
-        binary_password = bytes(password, "utf-8")
-        decryption_success = walletManager.decrypt(binary_password)
+    password = input("Enter your master password:")
+    binary_password = bytes(password, "utf-8")
+    if not walletManager.decrypt(binary_password):
+        exit(2) # exit so failure can be determined programmatically
 
     print("Welcome to password_keeper. Type 'help' for a list of commands or 'exit' to exit.")
     while True:
