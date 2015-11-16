@@ -11,4 +11,5 @@ Clone the repo using git or download it as a ZIP file, then run "python3 main.py
 
 # Cracking The Vault
 A short shell script is included, `crack.sh`, which tries every password in the list (using a hardcoded filename) and prints ones that succeed.
+Another script, `run_tests.sh`, repeatedly changes the master password and runs the cracking script so you can easily run a number of trials.
 
